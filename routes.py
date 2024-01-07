@@ -1,34 +1,60 @@
-from wtforms.validators import url
 from main import app,db
 from models import Users
 from flask import render_template,redirect, url_for
-from fields import Login
+from fields import Login,Register
 from flask_login import current_user,login_user,logout_user
 import sqlalchemy as sql
+from sqlalchemy import or_
+from models import Users
+from flask import request
+from urllib.parse import urlsplit
 
-@app.route("/",methods=["post","get"])
+
+@app.route("/")
+def index():
+     return render_template("test.html")
+
+
+@app.route("/login",methods=["post","get"])
 def login():
-     form = Login()
-     if current_user.is_authenticated:
-          print("authed bro")
-          return redirect(url_for("where"))
-     if form.validate_on_submit():
-          user = db.session.scalar(sql.select(Users).where(Users.username==form.username.data))
-          if user is None or not user.check_hash(form.password.data):
-               print("error")
-               return redirect(url_for("login"))
-          login_user(user,remember=form.state.data)
-          print("sucess")
-          return redirect(url_for("where"))
-     print("main")
-     return render_template("index.html",login=form)
+    form = Login()
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if form.validate_on_submit(): 
+        print("Post")
+        user = db.session.scalar(
+            sql.select(Users).where(
+                or_(
+                    Users.username == form.username.data,
+                    Users.email == form.username.data)))
+        print(user)
+        if user is None or not user.check_hash(form.password.data):
+            return redirect(url_for('login'))
+        login_user(user, remember=form.state.data)
+        next_page = request.args.get('next')
+        print(next_page)
+        if not next_page or urlsplit(next_page).netloc != '':
+            next_page = url_for('index')
+        return redirect(next_page)    
+    return render_template('login.html', login=form)
+          
+#    print(Users)
+#     return render_template("index.html",login=form)
+@app.route("/register",methods=['get','post'])
+def register():
+    form = Register()
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    if form.validate_on_submit():
+        user = Users(username=form.username.data,email=form.email.data)
+        user.generate_hash(form.pass1.data)
+        db.session.add(user)
+        db.session.commit()
+        return redirect(url_for("login"))
+    return render_template("register.html",form=form)
 
-@app.route("/where")
-def where():
-     return render_template("test.html")
-
-@app.route("/ou")
+@app.route("/logout")
 def logout():
-     logout_user()
-     return redirect(url_for("login"))
+    logout_user()
+    return     redirect(url_for("login"))
 

@@ -26,10 +26,6 @@
         <span style="color: red">[{{ error }}]</span>
         {% endfor %}
       </p>
-      <p>
-        {{login.email.label}}<br />
-        {{login.email()}}
-      </p>
       <p>{{ login.state() }} {{ login.state.label }}</p>
       <br />
       <p>{{ login.submit() }}</p>

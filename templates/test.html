@@ -9,6 +9,11 @@
 
   <body>
     <h1>you are logged in</h1>
+    {% if current_user.is_anonymous %}
+    <a href="{{url_for('login')}}">login</a>
+    <a href="{{url_for('register')}}">Register</a>
+    {% else %}
     <a href="{{url_for('logout')}}">logout</a>
   </body>
+  {% endif %}
 </html>
