@@ -1,15 +1,39 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <title></title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="css/style.css" rel="stylesheet" />
+  </head>
 
-<head>
-  <title></title>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link href="css/style.css" rel="stylesheet" />
-</head>
-
-<body>
-  <h1>hello not g*y</h1>
-</body>
-
+  <body>
+    {% block content %}
+    <h1>Sign In</h1>
+    <form action="" method="post" novalidate>
+      {{ login.hidden_tag() }}
+      <p>
+        {{ login.username.label }}<br />
+        {{ login.username(size=32) }} <br />
+        {% for error in login.username.errors %}
+        <span style="color: red">[{{ error }}]</span>
+        {% endfor %}
+      </p>
+      <p>
+        {{ login.password.label }}<br />
+        {{ login.password(size=32) }} <br />
+        {% for error in login.password.errors %}
+        <span style="color: red">[{{ error }}]</span>
+        {% endfor %}
+      </p>
+      <p>
+        {{login.email.label}}<br />
+        {{login.email()}}
+      </p>
+      <p>{{ login.state() }} {{ login.state.label }}</p>
+      <br />
+      <p>{{ login.submit() }}</p>
+    </form>
+    {% endblock %}
+  </body>
 </html>
