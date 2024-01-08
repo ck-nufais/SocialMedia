@@ -2,7 +2,7 @@ from main import app,db
 from models import Users
 from flask import render_template,redirect, url_for
 from fields import Login,Register
-from flask_login import current_user,login_user,logout_user
+from flask_login import current_user,login_user,logout_user,login_required
 import sqlalchemy as sql
 from sqlalchemy import or_
 from models import Users
@@ -34,7 +34,7 @@ def login():
         next_page = request.args.get('next')
         print(next_page)
         if not next_page or urlsplit(next_page).netloc != '':
-            next_page = url_for('index')
+            next_page = url_for('user',user_name=current_user.username)
         return redirect(next_page)    
     return render_template('login.html', login=form)
           
@@ -56,5 +56,10 @@ def register():
 @app.route("/logout")
 def logout():
     logout_user()
-    return     redirect(url_for("login"))
+    return redirect(url_for("login"))
+
+@app.route('/user/<user_name>', methods=['GET'])
+@login_required
+def user(user_name):
+    return str(current_user.username)
 
