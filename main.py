@@ -14,9 +14,9 @@ migrate = Migrate(app,db)
 
 import models,routes 
 
-from models import Users
+from models import Users,Follow
 @app.shell_context_processor
 def make_shell_context():
-    return {'sql': sa, 'orm': so, 'db': db, 'User': Users}
+    return {'sql': sa, 'orm': so, 'db': db, 'User': Users,"Follow":Follow}
 
 
