@@ -1,16 +1,17 @@
 from main import db,Login
-from sqlalchemy import String,ForeignKey,select,func
+from sqlalchemy import String,ForeignKey,select,func,Boolean
 from sqlalchemy.orm import relationship,Mapped,mapped_column,WriteOnlyMapped
 from werkzeug.security import generate_password_hash ,check_password_hash
 from flask_login import UserMixin
 from datetime import datetime,timezone
 
 class Follow(db.Model):
-    # id:Mapped[int] = mapped_column(primary_key=True)
     follower_id:Mapped[int] = mapped_column(ForeignKey("users.id"),primary_key=True)
     followed_id:Mapped[int] = mapped_column(ForeignKey("users.id"),primary_key=True)
 
-
+class RoomR(db.Model):
+    userid:Mapped[int] = mapped_column(ForeignKey("users.id"))
+    roomid:Mapped[int] = mapped_column(ForeignKey("rooms.id"))
 
 class Users(UserMixin,db.Model):
     id:Mapped[int] = mapped_column(primary_key=True)
@@ -20,6 +21,7 @@ class Users(UserMixin,db.Model):
     posts:WriteOnlyMapped['Posts'] = relationship(back_populates="user")
     followers:WriteOnlyMapped["Users"] = relationship(back_populates="follows" ,secondary='follow',secondaryjoin=( id==Follow.followed_id),primaryjoin=(Follow.follower_id==id))
     follows:WriteOnlyMapped["Users"]= relationship(back_populates="followers", secondary='follow', primaryjoin=(Follow.followed_id == id), secondaryjoin=(Follow.follower_id == id))
+    rooms:WriteOnlyMapped["Rooms"] = relationship(back_populates="users",secondary="roomr" ,primaryjoin=(id==RoomR.userid))
     def generate_hash(self,password):
         self.password = generate_password_hash(password)
     def check_hash(self,password):
@@ -30,7 +32,6 @@ class Users(UserMixin,db.Model):
     def unfollow(self,user):
         if self.is_following(user):
             self.follows.remove(user)
-
     def following_count(self):
         query = select(func.count()).select_from(
             self.follows.select().subquery())
@@ -44,6 +45,12 @@ class Users(UserMixin,db.Model):
         return db.session.scalar(query)
 
 
+class Rooms(db.Model):
+    id:Mapped[int] = mapped_column(primary_key=True)
+    isprivate:Mapped[bool] = mapped_column(Boolean,default=True)
+    # name:Mapped[str] = mapped_column()
+    users:WriteOnlyMapped["Users"] = relationship(back_populates="rooms",secondary="roomr" ,primaryjoin=(Users.id==RoomR.userid),secondaryjoin=(id==RoomR.roomid))
+
 
 class Posts(db.Model):
     id:Mapped[int] = mapped_column(primary_key=True)
@@ -51,7 +58,6 @@ class Posts(db.Model):
     time_Stamp:Mapped[datetime] = mapped_column(index=True,default=lambda:datetime.now(timezone.utc))
     user_id:Mapped[int] = mapped_column(ForeignKey(Users.id),index=True)
     user:Mapped[Users] = relationship(back_populates="posts")
-
 
 
 
