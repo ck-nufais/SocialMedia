@@ -4,14 +4,15 @@ from sqlalchemy.orm import relationship,Mapped,mapped_column,WriteOnlyMapped
 from werkzeug.security import generate_password_hash ,check_password_hash
 from flask_login import UserMixin
 from datetime import datetime,timezone
+from uuid import uuid4
 
 class Follow(db.Model):
     follower_id:Mapped[int] = mapped_column(ForeignKey("users.id"),primary_key=True)
     followed_id:Mapped[int] = mapped_column(ForeignKey("users.id"),primary_key=True)
 
-class RoomR(db.Model):
-    userid:Mapped[int] = mapped_column(ForeignKey("users.id"))
-    roomid:Mapped[int] = mapped_column(ForeignKey("rooms.id"))
+class roomassociate(db.Model):
+    userid:Mapped[int] = mapped_column(ForeignKey("users.id"),primary_key=True)
+    roomid:Mapped[int] = mapped_column(ForeignKey("rooms.id"),primary_key=True)
 
 class Users(UserMixin,db.Model):
     id:Mapped[int] = mapped_column(primary_key=True)
@@ -21,7 +22,7 @@ class Users(UserMixin,db.Model):
     posts:WriteOnlyMapped['Posts'] = relationship(back_populates="user")
     followers:WriteOnlyMapped["Users"] = relationship(back_populates="follows" ,secondary='follow',secondaryjoin=( id==Follow.followed_id),primaryjoin=(Follow.follower_id==id))
     follows:WriteOnlyMapped["Users"]= relationship(back_populates="followers", secondary='follow', primaryjoin=(Follow.followed_id == id), secondaryjoin=(Follow.follower_id == id))
-    rooms:WriteOnlyMapped["Rooms"] = relationship(back_populates="users",secondary="roomr" ,primaryjoin=(id==RoomR.userid))
+    rooms:WriteOnlyMapped["Rooms"] = relationship(back_populates="users",secondary="roomassociate")
     def generate_hash(self,password):
         self.password = generate_password_hash(password)
     def check_hash(self,password):
@@ -45,12 +46,14 @@ class Users(UserMixin,db.Model):
         return db.session.scalar(query)
 
 
+
 class Rooms(db.Model):
     id:Mapped[int] = mapped_column(primary_key=True)
     isprivate:Mapped[bool] = mapped_column(Boolean,default=True)
-    # name:Mapped[str] = mapped_column()
-    users:WriteOnlyMapped["Users"] = relationship(back_populates="rooms",secondary="roomr" ,primaryjoin=(Users.id==RoomR.userid),secondaryjoin=(id==RoomR.roomid))
-
+    code:Mapped[str] = mapped_column(String(128))
+    users:WriteOnlyMapped["Users"] = relationship(back_populates="rooms",secondary="roomassociate" )#,primaryjoin=(Users.id==RoomR.userid),secondaryjoin=(id==RoomR.roomid))
+    def generate_code(self):
+        return str(uuid4())
 
 class Posts(db.Model):
     id:Mapped[int] = mapped_column(primary_key=True)
